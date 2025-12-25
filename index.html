@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>مواقيت الصلاة — التطبيق المحسّن</title>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "@websim/websim-socket": "https://esm.websim.com/@websim/websim-socket"
+      }
+    }
+  </script>
+
+  <!-- خط عربي جميل -->
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- أيقونات (Font Awesome) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#16a34a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <style>
+    :root{
+  --bg1:#E6F6FF; 
+  --bg2:#F0FFF4; 
+  --card:#ffffff; 
+  --muted:#5f6775; 
+  --accent:#0ea5a4; 
+  --text:#082032;
+}
+[data-theme="dark"]{
+  --bg1:#1e293b;   /* رمادي كحلي أنعم */
+  --bg2:#0f172a;   /* أزرق داكن */
+  --card:#1e293b;  /* لون البطاقة قريب من الخلفية لكن أفتح قليلاً */
+  --muted:#cbd5e1; /* رمادي فاتح */
+  --accent:#38bdf8;/* سماوي مشرق */
+  --text:#f1f5f9;  /* أبيض مائل للسماوي */
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:'Cairo',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  background: linear-gradient(180deg,var(--bg1),var(--bg2));
+  color:var(--text);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:20px;
+}
+
+/* الحاوية الرئيسية */
+.app{
+  width:100%;
+  max-width:1000px;
+  display:flex;
+  flex-direction:column;
+  gap:20px;
+}
+
+/* العنوان */
+header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.logo{
+  width:60px;height:60px;
+  display:grid;place-items:center;
+  border-radius:15px;
+  background:linear-gradient(135deg,var(--accent),#06b6d4);
+  color:#fff;
+  font-size:22px;
+  font-weight:bold;
+  box-shadow:0 6px 15px rgba(0,0,0,0.2);
+}
+h1{margin:0;font-size:1.6rem}
+
+/* الأزرار */
+.btn{
+  background:var(--card);
+  padding:10px 15px;
+  border-radius:12px;
+  border:1px solid rgba(0,0,0,0.08);
+  cursor:pointer;
+  color:var(--text);
+  font-weight:600;
+  box-shadow:0 4px 12px rgba(0,0,0,0.15);
+}
+.btn:hover{transform:scale(1.04)}
+
+/* شبكة البطاقات */
+.grid{
+  display:grid;
+  gap:20px;
+  grid-template-columns:1fr 320px;
+}
+@media(max-width:860px){
+  .grid{grid-template-columns:1fr}
+}
+
+/* بطاقات */
+.card{
+  background:var(--card);
+  border-radius:20px;
+  padding:20px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.2);
+}
+
+/* بطاقات الصلاة */
+.pray-grid{
+  display:grid;
+  gap:18px;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+}
+.pray{
+  border-radius:16px;
+  padding:15px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:linear-gradient(180deg,rgba(255,255,255,0.05),rgba(0,0,0,0.05));
+  transition:transform .2s, box-shadow .2s;
+}
+.pray:hover{
+  transform:translateY(-5px);
+  box-shadow:0 6px 15px rgba(0,0,0,0.3);
+}
+.icon{
+  width:50px;height:50px;
+  border-radius:12px;
+  display:grid;place-items:center;
+  font-size:26px;
+  background:rgba(255,255,255,0.1);
+}
+.name{
+  font-weight:700;
+  color:var(--accent);
+  font-size:1.1rem;
+}
+.time{
+  font-weight:700;
+  font-size:1.3rem;
+}
+
+/* النصوص المساعدة */
+.small{font-size:0.9rem;color:var(--muted)}
+footer{margin-top:20px;text-align:center;color:var(--muted);font-size:0.9rem}
+  </style>
+</head>
+<body>
+  <div id="splash-screen">
+    <img src="https://i.ibb.co/LzR84ngM/Picsart-25-09-12-03-07-34-800.png" alt="logo" class="splash-logo">
+    <h1 class="splash-title">مواقيت الصلاة</h1>
+    <p class="splash-quote">"إِنَّ الصَّلَاةَ كَانَتْ عَلَى الْمُؤْمِنِينَ كِتَابًا مَوْقُوتًا"</p>
+  </div>
+
+  <div class="app" id="app">
+    <header>
+      <div class="brand">
+        <div class="logo">
+          <img src="https://i.ibb.co/LzR84ngM/Picsart-25-09-12-03-07-34-800.png" alt="logo" />
+        </div>
+        <div class="title-container">
+          <h1>مواقيت الصلاة</h1>
+          <div class="small muted" id="hijriDateLabel"></div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="btn icon-btn" id="volumeBtn" title="كتم/تشغيل صوت الأذان">
+          <i class="fa-solid fa-volume-high"></i>
+        </button>
+        <div class="theme-toggle">
+            <i class="fa-solid fa-circle-half-stroke"></i>
+            <select id="themeSelect" class="btn" aria-label="اختر الثيم">
+                <option value="auto">تلقائي</option>
+                <option value="light">فاتح</option>
+                <option value="dark">داكن</option>
+            </select>
+        </div>
+        <button class="btn icon-btn" id="scheduleBtn" title="جدول المواقيت الشهري">
+          <i class="fa-solid fa-calendar-days"></i>
+        </button>
+        <button class="btn icon-btn" id="rawatibBtn" title="السنن والرواتب">
+            <i class="fa-solid fa-book-open"></i>
+        </button>
+        <button class="btn icon-btn" id="widgetBtn" title="ويدجت العد التنازلي">
+          <i class="fa-solid fa-stopwatch"></i>
+        </button>
+        <button class="btn icon-btn" id="shareBtn" title="مشاركة">
+          <i class="fa-solid fa-share-nodes"></i>
+        </button>
+        <button class="btn icon-btn" id="refreshBtn" title="تحديث">
+          <i class="fa-solid fa-rotate-right"></i>
+        </button>
+        <button class="btn icon-btn" id="installBtn" style="display:none" title="تثبيت التطبيق">
+          <i class="fa-solid fa-download"></i>
+        </button>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- LEFT -->
+      <main class="card">
+        <div class="main-info">
+          <div class="countdown-wrapper">
+            <div class="small">الوقت المتبقي لـ <span id="nextName">---</span></div>
+            <div class="time-main" id="countdown">--:--:--</div>
+          </div>
+          <div class="location-info">
+            <div class="small" id="locationLabel">تحديد الموقع...</div>
+            <div class="small muted" id="dateLabel"></div>
+          </div>
+        </div>
+
+        <div class="pray-grid" id="prayerGrid">
+          <!-- بطاقات الصلوات تُملأ هنا -->
+          <div class="small muted" id="loadingHint">جاري جلب المواقيت...</div>
+        </div>
+      </main>
+
+      <!-- RIGHT -->
+      <aside class="meta">
+        <div class="card">
+          <div class="row">
+            <div class="small">مصدر الأوقات</div>
+            <div class="small muted">AlAdhan — Egyptian General Authority of Survey</div>
+          </div>
+          <div class="row">
+            <div>
+              <div class="small">تحديد الموقع</div>
+              <div class="location-buttons">
+                <button class="btn" id="useGps"><i class="fa-solid fa-location-crosshairs"></i> GPS</button>
+                <button class="btn" id="useIp"><i class="fa-solid fa-wifi"></i> IP</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <div class="small">اختر مدينة يدوياً</div>
+              <div class="select-wrapper select-group">
+                <input id="countrySearch" class="select-search" type="search" placeholder="ابحث عن دولة..." aria-label="بحث عن دولة">
+                <select id="countrySelect" class="btn" aria-label="اختر الدولة">
+                  <option value="">-- اختر الدولة --</option>
+                </select>
+                <i class="fa-solid fa-globe select-arrow" style="right:auto; left:1rem;"></i>
+              </div>
+              <div class="select-wrapper">
+                <input id="citySearch" class="select-search" type="search" placeholder="ابحث عن مدينة..." aria-label="بحث عن مدينة" disabled>
+                <select id="citySelect" class="btn" aria-label="اختر مدينة" disabled>
+                  <option value="">-- اختر المدينة --</option>
+                </select>
+                <i class="fa-solid fa-chevron-down select-arrow"></i>
+              </div>
+              <div class="small" style="margin-top:.5rem;">تصحيح التاريخ الهجري</div>
+              <select id="hijriAdjustSelect" class="btn" aria-label="تصحيح التاريخ الهجري">
+                <option value="-2">-2 يوم</option>
+                <option value="-1">-1 يوم</option>
+                <option value="0" selected>بدون تصحيح</option>
+                <option value="1">+1 يوم</option>
+                <option value="2">+2 يوم</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <div class="small">طريقة الحساب ومذهب العصر</div>
+              <div class="select-wrapper select-group">
+                <select id="calcMethodSelect" class="btn" aria-label="طريقة الحساب">
+                  <option value="5">هيئة المساحة المصرية</option>
+                  <option value="4">أم القرى (مكة)</option>
+                  <option value="3">رابطة العالم الإسلامي</option>
+                  <option value="2">الجمعية الإسلامية لأمريكا الشمالية</option>
+                  <option value="1">جامعة كراتشي</option>
+                  <option value="7">معهد الجيوفيزياء بطهران</option>
+                  <option value="8">منطقة الخليج</option>
+                  <option value="9">الكويت</option>
+                </select>
+              </div>
+              <div class="select-wrapper">
+                <select id="asrMethodSelect" class="btn" aria-label="مذهب العصر">
+                  <option value="0">الشافعي/المالكي/الحنبلي</option>
+                  <option value="1">الحنفي</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <div class="small">الإشعارات</div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="notifToggle">
+                <span class="slider"></span>
+                <span class="small label-text">تفعيل إشعارات الأذان</span>
+              </label>
+              <div class="small muted hint">ملاحظة: الإشعارات تعمل فقط عند فتح الصفحة.</div>
+            </div>
+          </div>
+
+          <div class="row" id="audio-prompt-row" style="display: none;">
+              <div class="small muted hint">لتفعيل صوت الأذان، يرجى الضغط على أيقونة الصوت <i class="fa-solid fa-volume-high"></i> في الأعلى.</div>
+          </div>
+          
+          <div class="row">
+            <div>
+              <div class="small">الاستماع للأذان</div>
+              <button class="btn" id="playAdhanBtn" title="تشغيل صوت الأذان">
+                <i class="fa-solid fa-play"></i> <span>تشغيل</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="small muted">يتم حفظ الإعدادات في متصفحك.</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <footer>
+       مواقيت الصلاة
+    </footer>
+  </div>
+
+  <div id="schedule-modal" class="modal-overlay">
+    <div class="modal-content card">
+      <div class="modal-header">
+        <h2 id="schedule-month-year">جدول المواقيت الشهري</h2>
+        <button id="shareScheduleBtn" class="btn icon-btn" title="مشاركة"><i class="fa-solid fa-share-nodes"></i></button>
+        <button id="closeModalBtn" class="btn icon-btn" title="إغلاق">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>اليوم</th>
+                <th>التاريخ</th>
+                <th>الفجر</th>
+                <th>الشروق</th>
+                <th>الظهر</th>
+                <th>العصر</th>
+                <th>المغرب</th>
+                <th>العشاء</th>
+              </tr>
+            </thead>
+            <tbody id="schedule-table-body">
+              <!-- Rows will be injected by JS -->
+            </tbody>
+          </table>
+        </div>
+        <div id="schedule-loading" class="small muted" style="text-align: center; padding: 2rem;">جاري تحميل الجدول...</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="sunan-modal" class="modal-overlay">
+    <div class="modal-content card">
+      <div class="modal-header">
+        <h2 id="sunan-modal-title"></h2>
+        <button id="shareSunanBtn" class="btn icon-btn" title="مشاركة"><i class="fa-solid fa-share-nodes"></i></button>
+        <button id="closeSunanModalBtn" class="btn icon-btn" title="إغلاق">&times;</button>
+      </div>
+      <div class="modal-body" id="sunan-modal-body">
+        <!-- Sunan details will be injected by JS -->
+      </div>
+    </div>
+  </div>
+
+  <div id="rawatib-modal" class="modal-overlay">
+    <div class="modal-content card">
+      <div class="modal-header">
+        <h2>السنن والرواتب</h2>
+        <button id="shareRawatibBtn" class="btn icon-btn" title="مشاركة"><i class="fa-solid fa-share-nodes"></i></button>
+        <button id="closeRawatibModalBtn" class="btn icon-btn" title="إغلاق">&times;</button>
+      </div>
+      <div class="modal-body" id="rawatib-modal-body">
+        
+        <h3>📊 جدول السنن الرواتب الكامل</h3>
+        <div class="table-container">
+          <table class="sunan-table">
+            <thead>
+              <tr>
+                <th>الصلاة</th>
+                <th>السنن القبلية</th>
+                <th>السنن البعدية</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>الفجر</strong></td>
+                <td>2 ركعات (سنة مؤكدة)</td>
+                <td>-</td>
+              </tr>
+              <tr>
+                <td><strong>الظهر</strong></td>
+                <td>4 ركعات (سنة مؤكدة)</td>
+                <td>2 ركعات (سنة مؤكدة)</td>
+              </tr>
+              <tr>
+                <td><strong>العصر</strong></td>
+                <td>4 ركعات (سنة مستحبة)</td>
+                <td>-</td>
+              </tr>
+              <tr>
+                <td><strong>المغرب</strong></td>
+                <td>-</td>
+                <td>2 ركعات (سنة مؤكدة)</td>
+              </tr>
+              <tr>
+                <td><strong>العشاء</strong></td>
+                <td>-</td>
+                <td>2 ركعات (سنة مؤكدة)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3><i class="fa-solid fa-star" style="color: #f59e0b;"></i> فضائل المحافظة على السنن</h3>
+        <div class="daleel">
+            <p>"مَنْ صَلَّى ثِنْتَيْ عَشْرَةَ رَكْعَةً فِي يَوْمٍ وَلَيْلَةٍ، بُنِيَ لَهُ بِهِنَّ بَيْتٌ فِي الْجَنَّةِ" (رواه مسلم).</p>
+        </div>
+        <div class="daleel">
+            <p>قال النبي صلى الله عليه وسلم: "من حافظ على أربع قبل الظهر وأربع بعدها حرمه الله تعالى على النار" [رواه الترمذي والنسائي].</p>
+        </div>
+
+        <h3><i class="fa-solid fa-circle-info"></i> ملاحظات مهمة</h3>
+        <ul class="notes-list">
+            <li><strong>الاختلاف بين المذاهب:</strong>
+                <ul>
+                    <li>الحنفية: يرون أن الرواتب 12 ركعة (4 قبل الظهر، 2 بعدها، 2 بعد المغرب، 2 بعد العشاء، 2 قبل الفجر).</li>
+                    <li>الشافعية والحنابلة: يرون أن الرواتب 10 ركعات (2 قبل الظهر، 2 بعدها، 2 بعد المغرب، 2 بعد العشاء، 2 قبل الفجر).</li>
+                    <li>المالكية: لا يحدون عدداً معيناً للرواتب، لكن أقلها ركعتان قبل الفجر.</li>
+                </ul>
+            </li>
+            <li><strong>السنن غير المؤكدة:</strong> تشمل ركعتين قبل المغرب، وركعتين قبل العشاء، وأربعاً قبل العصر.</li>
+            <li><strong>الجمعة:</strong> سنة الجمعة القبلية والبعدية تختلف عن الظهر عند بعض المذاهب.</li>
+            <li><strong>صلاة التحية:</strong> تحية المسجد تكفي عن السنة الراتبة إذا وافق وقتها.</li>
+        </ul>
+        
+        <h3>خاتمة</h3>
+        <p class="small muted" style="line-height: 1.8;">
+            السنن الرواتب من النوافل التي شرعت جبراً للخلل الحاصل في الصلوات المفروضة، وهي من أفضل القربات التي يتقرب بها العبد إلى ربه. وقد بين النبي صلى الله عليه وسلم عددها ومواقيتها بقوله وفعله، وحث على المحافظة عليها لما فيها من الأجر العظيم والثواب الجزيل.
+        </p>
+
+      </div>
+    </div>
+  </div>
+
+  <div id="share-choose-modal" class="modal-overlay">
+    <div class="modal-content card" style="max-width: 420px;">
+      <div class="modal-header">
+        <h2>إرسال الملف</h2>
+        <button id="closeShareChooseBtn" class="btn icon-btn" title="إغلاق">&times;</button>
+      </div>
+      <div class="modal-body" style="display:flex;gap:.5rem;justify-content:space-between;flex-wrap:wrap">
+        <a id="chooseWa" class="btn" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> واتساب</a>
+        <a id="chooseTg" class="btn" target="_blank" rel="noopener"><i class="fa-brands fa-telegram"></i> تيليجرام</a>
+        <p class="small muted" style="margin-top:.75rem;line-height:1.7;">
+          تم حفظ ملف HTML على جهازك. افتح التطبيق واختر "ملفات" لإرفاق الملف المُحمَّل.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div id="share-modal" class="modal-overlay">
+    <div class="modal-content card" style="max-width: 520px;">
+      <div class="modal-header">
+        <h2>مشاركة</h2>
+        <button id="closeShareModalBtn" class="btn icon-btn" title="إغلاق">&times;</button>
+      </div>
+      <div class="modal-body">
+        <textarea id="shareTextArea" class="btn" style="width:100%;min-height:120px;text-align:right;"></textarea>
+        <div style="display:flex;gap:.5rem;justify-content:space-between;margin-top:.75rem;flex-wrap:wrap">
+          <button id="copyShareBtn" class="btn"><i class="fa-solid fa-copy"></i> نسخ</button>
+          <div style="display:flex;gap:.5rem;">
+            <a id="waShare" class="btn" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> واتساب</a>
+            <a id="tgShare" class="btn" target="_blank" rel="noopener"><i class="fa-brands fa-telegram"></i> تيليجرام</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="audio-permission-modal" class="modal-overlay">
+    <div class="modal-content card" style="max-width: 400px; text-align: center;">
+      <div class="modal-header" style="justify-content: center; border-bottom: none; padding-bottom: 0;">
+        <h2 id="audio-permission-title">تفعيل صوت الأذان</h2>
+      </div>
+      <div class="modal-body">
+        <p class="small muted" style="margin-bottom: 1.5rem;">
+          يحتاج التطبيق إلى إذنك لتشغيل صوت الأذان تلقائيًا عند حلول وقت الصلاة. الرجاء الضغط على الزر أدناه للسماح بذلك.
+        </p>
+        <button id="grantAudioBtn" class="btn" style="width: 100%; justify-content: center;">
+          <i class="fa-solid fa-volume-high"></i>
+          <span>السماح بتشغيل الصوت</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+{
+  "database": {
+    "schema": {
+      "user_settings": {
+        "id": {
+          "type": "text",
+          "description": "The user's unique identifier (user_id)."
+        },
+        "lat": {
+          "type": "numeric",
+          "description": "User's preferred latitude."
+        },
+        "lon": {
+          "type": "numeric",
+          "description": "User's preferred longitude."
+        },
+        "theme": {
+          "type": "text",
+          "description": "User's theme preference ('auto', 'light', 'dark')."
+        },
+        "is_muted": {
+          "type": "boolean",
+          "description": "User's sound preference."
+        },
+        "notifications_enabled": {
+          "type": "boolean",
+          "description": "User's notification preference."
+        }
+      }
+    },
+    "instructions": "This database stores user-specific settings for the prayer times application."
+  }
+}
+
